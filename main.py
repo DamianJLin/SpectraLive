@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 import spiker_stream_lib as ssl
+from matplotlib.animation import FuncAnimation
 
 # Read example data
 baud_rate = 230400
@@ -21,32 +22,30 @@ N_loops = int(20000.0 / inputBufferSize * total_time)
 T_acquire = inputBufferSize / 20000.0  # length of time that data is acquired for
 N_max_loops = int(max_time / T_acquire)  # total number of loops to cover desire time window
 
-fig = plt.figure()
-ax1 = fig.add_subplot(1, 1, 1)
-plt.ion()
-fig.show()
-fig.canvas.draw()
+data_plot = None
 
-for k in range(0, N_loops):
+
+def animate(i):
+    global data_plot
     data = ssl.read_arduino(ser, inputBufferSize)
     data_temp = ssl.process_data(data)
-    if k <= N_max_loops:
-        if k == 0:
+    if i <= N_max_loops:
+        if i == 0:
             data_plot = data_temp
         else:
             data_plot = np.append(data_temp, data_plot)
-        t = (min(k + 1, N_max_loops)) * inputBufferSize / 20000.0 * np.linspace(0, 1, data_plot.size)
+        t = (min(i + 1, N_max_loops)) * inputBufferSize / 20000.0 * np.linspace(0, 1, data_plot.size)
     else:
         data_plot = np.roll(data_plot, len(data_temp))
         data_plot[0:len(data_temp)] = data_temp
-    t = (min(k + 1, N_max_loops)) * inputBufferSize / 20000.0 * np.linspace(0, 1, data_plot.size)
+    t = (min(i + 1, N_max_loops)) * inputBufferSize / 20000.0 * np.linspace(0, 1, data_plot.size)
 
-    ax1.clear()
-    ax1.set_xlim(0, max_time)
-    plt.xlabel('time [s]')
-    ax1.plot(t, data_plot)
-    fig.canvas.draw()
-    plt.show()
+    plt.cla()
+    plt.plot(t, data_plot)
+
+
+ani = FuncAnimation(plt.gcf(), animate, 5000)
+plt.show()
 
 
 # close serial port if necessary
