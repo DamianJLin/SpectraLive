@@ -4,7 +4,10 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as anim
 import time
 
-plt.rcParams['animation.ffmpeg_path'] = r'C:\Program Files\ffmpeg\bin\ffmpeg.exe'
+
+def timer():
+    global start_time
+    return time.time() - start_time
 
 
 def rand_sin(err=0.2):
@@ -13,41 +16,41 @@ def rand_sin(err=0.2):
     :param err:
     :return:
     """
-    # global start_time
+    global start_time
 
     while True:
-        # x = time.time() - start_time
-        #
-        # yield np.sin(x) + err * 2 * (1 - np.random.rand())
-        yield 1
+        x = timer()
+
+        yield np.sin(np.pi * x) + err * 2 * (0.5 - np.random.rand())
 
 
 class Animator:
-    def __init__(self, ax_, t_window=6, dt=0.1):
+    def __init__(self, ax_, t_window=6):
         self.ax = ax_
         self.t_window = t_window  # Time interval displayed.
-        self.dt = dt
+        self.dt = 0.1
+        self.interval = int((1/self.dt) * 1000)  # Time interval needed between frames
         self.ax.set_xlim(0, -t_window)
+        self.ax.set_ylim(-1.5, 1.5)
 
-        self.t = 0
-        self.t_data_size = int(self.t_window / dt) + 1  # Number of points with spacing dt self.t_window corresponds to.
+        self.t_data_size = int(self.t_window / self.dt) + 1  # Number of points with spacing dt self.t_window corresponds to.
 
-        self.t_data = np.linspace(0, t_window, self.t_data_size, endpoint=True)
+        self.t_data = np.linspace(0, -t_window, self.t_data_size, endpoint=True)
         self.y_data = [0] * self.t_data_size
 
         self.line = Line2D(self.t_data, self.y_data)
 
         self.ax.add_line(self.line)
         self.ax.grid('minor')
-        self.ax.margins(0)
 
     def update(self, y):
+
         # Shift y_data.
         self.y_data.pop(-1)
         self.y_data.insert(0, y)
         self.line.set_data(self.t_data, self.y_data)
+        self.ax.set_title(f't={np.round(timer(), 1)}')
 
-        self.t += self.dt
         return self.line,
 
 
@@ -57,6 +60,5 @@ if __name__ == '__main__':
     fig, ax = plt.subplots()
     animator = Animator(ax)
 
-    ani = anim.FuncAnimation(fig, animator.update, rand_sin, interval=10, blit=False)
-    ani.save("ani_test_.mp4")
+    ani = anim.FuncAnimation(fig, animator.update, rand_sin, interval=100, blit=False)
     plt.show()
